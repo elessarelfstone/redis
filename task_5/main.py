@@ -1,44 +1,37 @@
-import base64
+import os
+
 import sys
 from collections import deque
 
 import redis
 
-KEY = 'tail100'
 SIZE = 100
+FILE_PATH = sys.argv[1]
 
 
+def tail_c(filename, n, block_size=1024):
 
-def tail(n):
+    with open(filename, 'rb') as f:
 
-    def bytes_from_file(fpath, chunksize=8192):
-        with open(fpath, "rb") as f:
-            while True:
-                chunk = f.read(chunksize)
-                if chunk:
-                    yield chunk
-                else:
-                    break
+        # storage for last n bytes
+        last_n_bytes = deque(maxlen=n)
 
-    f_path = sys.argv[1]
-    client = redis.Redis()
+        while True:
+            block = f.read(block_size)
+            if not block:
+                break
+            for byte in block:
+                last_n_bytes.append(byte)
 
-    t = client.get(KEY)
-    r = b''
-    if not t:
-        d = deque(maxlen=2)
-        for ch in bytes_from_file(f_path):
-            d.append(ch)
-
-        buff = d[0] + d[1]
-        buff = buff[-100:]
-        buff = base64.b64encode(buff)
-        client.set(KEY, buff)
-        r = buff
-    else:
-        r = t
-
-    return r
+    return bytes(last_n_bytes)
 
 
-print(base64.b64decode(tail(SIZE)).decode('utf-8'), file=sys.stdout)
+client = redis.Redis()
+key = os.path.basename(FILE_PATH)
+tail = client.get(key)
+
+if not tail:
+    tail = tail_c(FILE_PATH, SIZE, 1024 * 1024)
+    client.set(key, tail)
+
+sys.stdout.buffer.write(tail)
