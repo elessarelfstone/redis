@@ -11,6 +11,8 @@ FILE_PATH = sys.argv[1]
 
 def tail_c(filename, n, block_size=1024):
 
+    buffer = deque(maxlen=2)
+
     with open(filename, 'rb') as f:
 
         # storage for last n bytes
@@ -18,12 +20,13 @@ def tail_c(filename, n, block_size=1024):
 
         while True:
             block = f.read(block_size)
+
             if not block:
                 break
-            for byte in block:
-                last_n_bytes.append(byte)
 
-    return bytes(last_n_bytes)
+            buffer.append(block)
+
+    return b"".join(buffer)[-n:]
 
 
 client = redis.Redis()
@@ -31,7 +34,7 @@ key = os.path.basename(FILE_PATH)
 tail = client.get(key)
 
 if not tail:
-    tail = tail_c(FILE_PATH, SIZE, 1024 * 1024)
+    tail = tail_c(FILE_PATH, SIZE, 2048 * 2048)
     client.set(key, tail)
 
 sys.stdout.buffer.write(tail)
