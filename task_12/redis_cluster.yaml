@@ -1,0 +1,44 @@
+- name: Install Redis cluster
+  hosts: redis
+  become: true
+
+  vars:
+    redis_config_file: /etc/redis/redis.conf
+
+  tasks:
+  - name: Install Redis
+    apt:
+      name: redis
+      state: present
+      update_cache: no
+
+  - name: Set bind address in redis.conf
+    lineinfile:
+      path: "{{ redis_config_file }}"
+      regexp: '^bind .*'
+      line: "bind {{ ansible_default_ipv4.address }}"
+      backrefs: yes
+
+  - name: Enable Redis clustering
+    lineinfile:
+      path: "{{ redis_config_file }}"
+      regexp: '^#?cluster-enabled .*'
+      line: 'cluster-enabled yes'
+
+
+  - name: Set cluster config file name
+    lineinfile:
+      path: "{{ redis_config_file }}"
+      regexp: '^#?cluster-config-file .*'
+      line: 'cluster-config-file nodes.conf'
+  
+  - name: Restart Redis
+    systemd:
+      state: restarted
+      name: redis
+    tags:
+      - restart
+
+  - name: Run Redis cluster creation command
+    command: >
+      yes yes | redis-cli --cluster create {{ groups['redis'] | join(':6379 ') }}:6379 --cluster-replicas 1

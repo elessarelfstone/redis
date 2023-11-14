@@ -1,0 +1,7 @@
+[redis]
+node1 ansible_host=134.209.203.157 ansible_user=user ansible_password=xnkoyqcebjio
+node2 ansible_host=128.199.52.34 ansible_user=user ansible_password=coearjwmtcgf
+node3 ansible_host=146.190.28.14 ansible_user=user ansible_password=eokdkusouvgn
+node4 ansible_host=128.199.49.166 ansible_user=user ansible_password=jtsivkxfpmuy
+node5 ansible_host=142.93.140.174 ansible_user=user ansible_password=eolekmfzrhyx
+node6 ansible_host=159.223.0.181 ansible_user=user ansible_password=qdlqqoqivezg
